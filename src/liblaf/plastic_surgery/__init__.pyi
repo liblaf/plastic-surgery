@@ -1,3 +1,4 @@
-from ._version import __version__, __version_tuple__, version, version_tuple
+from ._reader import DicomReader
+from ._version import __version__, __version_tuple__
 
-__all__ = ["__version__", "__version_tuple__", "version", "version_tuple"]
+__all__ = ["DicomReader", "__version__", "__version_tuple__"]
