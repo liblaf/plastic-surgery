@@ -28,12 +28,12 @@ def process_acquisition(acquisition_dir: Path, output_dir: Path) -> None:
     )
     image_data: pv.ImageData = reader.image_data
     image_data = image_data.gaussian_smooth()  # pyright: ignore[reportAssignmentType]
-    skull: pv.PolyData = image_data.contour([-200.0])  # pyright: ignore[reportAssignmentType]
-    skull.extract_largest(inplace=True)
-    melon.save(output_dir / "skull.ply", skull)
-    skin: pv.PolyData = image_data.contour([200.0])  # pyright: ignore[reportAssignmentType]
+    skin: pv.PolyData = image_data.contour([-200.0])  # pyright: ignore[reportAssignmentType]
     skin.extract_largest(inplace=True)
     melon.save(output_dir / "skin.ply", skin)
+    skull: pv.PolyData = image_data.contour([200.0])  # pyright: ignore[reportAssignmentType]
+    skull.extract_largest(inplace=True)
+    melon.save(output_dir / "skull.ply", skull)
 
 
 def main(cfg: Config) -> None:
