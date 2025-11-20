@@ -1,5 +1,7 @@
-import datetime
+import concurrent
+import concurrent.futures
 import logging
+from concurrent.futures import Future, ProcessPoolExecutor
 from pathlib import Path
 
 import pyvista as pv
@@ -36,34 +38,22 @@ def process_acquisition(acquisition_dir: Path, output_dir: Path) -> None:
 
 def main(cfg: Config) -> None:
     meta: MetaDataset = grapes.load(cfg.data_dir / "dataset.json", type=MetaDataset)
-    task_inputs: list[tuple[Path, Path]] = []
-    patient_ids_to_del: list[str] = []
-    for patient_id, meta_patient in meta.patients.items():
-        datetimes: list[datetime.datetime] = [
-            acquisition.datetime for acquisition in meta_patient.acquisitions
-        ]
-        interval: datetime.timedelta = max(datetimes) - min(datetimes)
-        if interval < datetime.timedelta(days=30):
-            logger.warning(
-                "%s (%s): skipping due to short interval: %s",
-                patient_id,
-                meta_patient.name,
-                interval,
-            )
-            patient_ids_to_del.append(patient_id)
-            continue
-        task_inputs.extend(
-            (
-                cfg.data_dir / patient_id / acquisition_datetime.strftime("%Y-%m-%d"),
-                cfg.output_dir / patient_id / acquisition_datetime.strftime("%Y-%m-%d"),
-            )
-            for acquisition_datetime in datetimes
-        )
-    for patient_id in patient_ids_to_del:
-        del meta.patients[patient_id]
-    grapes.save(cfg.output_dir / "dataset.json", meta)
-    for inputs in grapes.track(task_inputs):
-        process_acquisition(*inputs)
+    cfg.output_dir.mkdir(parents=True, exist_ok=True)
+    grapes.save(cfg.output_dir / "dataset.json", meta, order="sorted")
+    with ProcessPoolExecutor() as executor:
+        futures: list[Future[None]] = []
+        for patient_id, meta_patient in meta.patients.items():
+            for meta_acq in meta_patient.acquisitions:
+                input_dir: Path = (
+                    cfg.data_dir / patient_id / meta_acq.datetime.strftime("%Y-%m-%d")
+                )
+                output_dir: Path = (
+                    cfg.output_dir / patient_id / meta_acq.datetime.strftime("%Y-%m-%d")
+                )
+                futures.append(
+                    executor.submit(process_acquisition, input_dir, output_dir)
+                )
+        concurrent.futures.wait(futures)
 
 
 if __name__ == "__main__":
