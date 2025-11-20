@@ -172,10 +172,10 @@ def main(cfg: Config) -> None:
         post_mandible.transform(post_to_pre, inplace=True)
 
         output_patient_dir: Path = cfg.outputs_dir / patient_id
-        melon.save(output_patient_dir / "pre-skin.ply", pre_skin)
+        melon.save(output_patient_dir / "pre-skin.vtp", pre_skin)
         melon.save(output_patient_dir / "pre-cranium.ply", pre_cranium)
         melon.save(output_patient_dir / "pre-mandible.ply", pre_mandible)
-        melon.save(output_patient_dir / "post-skin.ply", post_skin)
+        melon.save(output_patient_dir / "post-skin.vtp", post_skin)
         melon.save(output_patient_dir / "post-cranium.ply", post_cranium)
         melon.save(output_patient_dir / "post-mandible.ply", post_mandible)
 
