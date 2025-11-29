@@ -16,13 +16,13 @@ logger: logging.Logger = logging.getLogger(__name__)
 class Config(cherries.BaseConfig):
     inputs_dir: Path = cherries.input("11-surface")
 
-    template_cranium: Path = cherries.input("00-sculptor-cranium.ply")
-    template_mandible: Path = cherries.input("00-sculptor-mandible.ply")
+    template_cranium: Path = cherries.input("20-template-cranium.vtp")
+    template_mandible: Path = cherries.input("20-template-mandible.vtp")
     template_skin: Path = cherries.input(
         "00-XYZ_ReadyToSculpt_eyesClosed_GEO_PolyGroups.obj"
     )
 
-    outputs_dir: Path = cherries.output("20-registration")
+    outputs_dir: Path = cherries.output("21-registration")
 
 
 def icp(
@@ -54,11 +54,9 @@ def register_acquisition(
     template_mandible_landmarks: Float[np.ndarray, "l 3"],
 ) -> tuple[pv.PolyData, pv.PolyData, pv.PolyData] | None:
     skin_file: Path = folder / "skin.ply"
-    skin: pv.PolyData = melon.load_polydata(skin_file)
     skin_landmarks: Float[np.ndarray, "l 3"] = melon.load_landmarks(skin_file)
     if skin_landmarks.size == 0:
         return None
-    skull: pv.PolyData = melon.load_polydata(folder / "skull.ply")
     cranium_landmarks: Float[np.ndarray, "l 3"] = melon.load_landmarks(
         folder / "cranium.landmarks.json"
     )
@@ -69,6 +67,8 @@ def register_acquisition(
     )
     if mandible_landmarks.size == 0:
         return None
+    skin: pv.PolyData = melon.load_polydata(skin_file)
+    skull: pv.PolyData = melon.load_polydata(folder / "skull.ply")
     skin = melon.tri.fast_wrapping(
         template_skin,
         skin,
@@ -90,21 +90,20 @@ def register_acquisition(
                 "Nostril",
             ],
         ),
-        verbose=True,
     )
     cranium: pv.PolyData = melon.tri.fast_wrapping(
         template_cranium,
         skull,
         source_landmarks=template_cranium_landmarks,
         target_landmarks=cranium_landmarks,
-        verbose=True,
+        free_polygons_floating=template_cranium.cell_data["Floating"],
     )
     mandible: pv.PolyData = melon.tri.fast_wrapping(
         template_mandible,
         skull,
         source_landmarks=template_mandible_landmarks,
         target_landmarks=mandible_landmarks,
-        verbose=True,
+        free_polygons_floating=template_mandible.cell_data["Floating"],
     )
     return skin, cranium, mandible
 
@@ -173,11 +172,11 @@ def main(cfg: Config) -> None:
 
         output_patient_dir: Path = cfg.outputs_dir / patient_id
         melon.save(output_patient_dir / "pre-skin.vtp", pre_skin)
-        melon.save(output_patient_dir / "pre-cranium.ply", pre_cranium)
-        melon.save(output_patient_dir / "pre-mandible.ply", pre_mandible)
+        melon.save(output_patient_dir / "pre-cranium.vtp", pre_cranium)
+        melon.save(output_patient_dir / "pre-mandible.vtp", pre_mandible)
         melon.save(output_patient_dir / "post-skin.vtp", post_skin)
-        melon.save(output_patient_dir / "post-cranium.ply", post_cranium)
-        melon.save(output_patient_dir / "post-mandible.ply", post_mandible)
+        melon.save(output_patient_dir / "post-cranium.vtp", post_cranium)
+        melon.save(output_patient_dir / "post-mandible.vtp", post_mandible)
 
 
 if __name__ == "__main__":
