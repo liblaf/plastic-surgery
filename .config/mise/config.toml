@@ -1,4 +1,7 @@
 #:schema https://mise.jdx.dev/schema/mise.json
 
+[env]
+XLA_PYTHON_CLIENT_MEM_FRACTION = ".25"
+
 [task_config]
 includes = [".config/mise/tasks", ".config/copier/mise-tasks"]
