@@ -31,7 +31,7 @@ dependencies = [
   "liblaf-grapes>=8,<9",
   "liblaf-melon>=0.9,<0.10",
   "pydicom>=3,<4",
-  "pyvista>=0.46,<0.47"
+  "pyvista>=0.49,<0.50"
 ]
 dynamic = ["version"]
 
